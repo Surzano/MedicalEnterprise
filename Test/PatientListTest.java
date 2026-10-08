@@ -1,5 +1,11 @@
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import java.time.LocalDate;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -7,6 +13,25 @@ public class PatientListTest {
     private Patient n1patient_sim(Patient p) {
         return p;
     }
+    private final String TEST_FILE = "test_input.csv";
+    private final String EXPORT_FILE = "test_export.csv";
+
+    @BeforeEach
+    public void setUpFiles() throws IOException {
+        // Create an unsorted file with some valid records and a bad record to test skipping
+        try (FileWriter writer = new FileWriter(TEST_FILE)) {
+            writer.write("Zebra, Zack, 2000-01-01\n");
+            writer.write("Apple, Adam, 1985-05-15\n");
+            writer.write("Bad, Record, InvalidDate\n"); // Should be skipped
+            writer.write("Baker, Betty, 1992-03-10\n");
+        }
+    }
+    @AfterEach
+    public void cleanUpFiles() throws IOException {
+        Files.deleteIfExists(new File(TEST_FILE).toPath());
+        Files.deleteIfExists(new File(EXPORT_FILE).toPath());
+    }
+
     @Test
     public void testSortedAddAndBinarySearch() {
         PatientList list = new PatientList();
@@ -103,4 +128,52 @@ public class PatientListTest {
 
         assertEquals(binaryResult, linearResult, "Binary search and Linear search should bring forth same result.");
     }
+    @Test
+    public void testImportFromFileAndMergesort() {
+        PatientList list = new PatientList();
+        boolean good = list.importFromFile(TEST_FILE);
+
+        assertTrue(good, "Import should succeed");
+
+        PatientList.Iterator iter = list.new Iterator();
+        Patient p1 = iter.next(); // Should be Apple, Adam (sorted via Mergesort)
+        Patient p2 = iter.next(); // Should be Baker, Betty
+        Patient p3 = iter.next(); // Should be Zebra, Zack
+        Patient p4 = iter.next(); // Should be null (bad record skipped)
+
+        assertNotNull(p1);
+        assertTrue(p1.toCSV().contains("Apple"), "First item should be Adam Apple after mergesort");
+
+        assertNotNull(p2);
+        assertTrue(p2.toCSV().contains("Baker"), "Second item should be Betty Baker");
+
+        assertNotNull(p3);
+        assertTrue(p3.toCSV().contains("Zebra"), "Third item should be Zack Zebra");
+
+        assertNull(p4, "Invalid lines should have been skipped during import");
+    }
+    @Test
+    public void testSaveToFile() {
+        PatientList list = new PatientList();
+        Patient p1 = new Patient(new PatientID(new Name("Zebra", "Zack"), LocalDate.of(2000, 1, 1)));
+        Patient p2 = new Patient(new PatientID(new Name("Adam", "Apple"), LocalDate.of(1985, 5, 15)));
+
+        list.addPatient(p1);
+        list.addPatient(p2);
+
+        boolean saved = list.saveToFile(EXPORT_FILE);
+        assertTrue(saved, "saveToFile should return true");
+
+        File file = new File(EXPORT_FILE);
+        assertTrue(file.exists(), "Export file should be created on disk");
+
+        // Verify content by importing it back
+        PatientList verifyList = new PatientList();
+        verifyList.importFromFile(EXPORT_FILE);
+
+        PatientList.Iterator iter = verifyList.new Iterator();
+        assertEquals("Adam, Apple, 1985-05-15", iter.next().toCSV());
+        assertEquals("Zebra, Zack, 2000-01-01", iter.next().toCSV());
+    }
+
 }

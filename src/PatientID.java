@@ -1,13 +1,21 @@
 import java.time.LocalDate;
 
-
-public class PatientID {
+public class PatientID implements Comparable<PatientID> {
     private final Name nm;
     private final LocalDate dob;
 
     public PatientID(Name nm, LocalDate dob) {
         this.nm = nm;
         this.dob = dob;
+    }
+
+    // --- ADD THESE TWO GETTERS ---
+    public Name getNm() {
+        return nm;
+    }
+
+    public LocalDate getDob() {
+        return dob;
     }
 
     public boolean match(PatientID other) {
@@ -27,7 +35,6 @@ public class PatientID {
         return nm.islessThan(other.nm);
     }
 
-
     public int compareTo(PatientID other) {
         if (other == null) {
             return 1;
@@ -40,6 +47,7 @@ public class PatientID {
         }
         return 1;
     }
+
     public String toString(){
         return nm.fullName()+ " - DOB: " + dob.toString();
     }
