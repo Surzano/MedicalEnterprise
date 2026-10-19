@@ -167,13 +167,42 @@ public class PatientListTest {
         File file = new File(EXPORT_FILE);
         assertTrue(file.exists(), "Export file should be created on disk");
 
-        // Verify content by importing it back
+
         PatientList verifyList = new PatientList();
         verifyList.importFromFile(EXPORT_FILE);
 
         PatientList.Iterator iter = verifyList.new Iterator();
         assertEquals("Adam, Apple, 1985-05-15", iter.next().toCSV());
         assertEquals("Zebra, Zack, 2000-01-01", iter.next().toCSV());
+    }
+    @Test
+    public void testImportPrescriptionsFromFile() throws Exception {
+        PatientList pList = new PatientList();
+        Patient jane = new Patient(new PatientID(new Name("Doe", "Jane"), LocalDate.parse("1990-05-12")));
+        pList.addPatient(jane);
+
+
+        java.io.File tempFile = java.io.File.createTempFile("prescriptions_test", ".csv");
+        tempFile.deleteOnExit();
+
+        try (java.io.FileWriter writer = new java.io.FileWriter(tempFile)) {
+            writer.write("Doe, Jane, 1990-05-12, Amoxicillin, 2024-03-10, 500mg, Dr. Adams\n");
+            writer.write("Doe, Jane, 1990-05-12, Lisinopril, 2026-08-01, 10mg, Dr. Baker\n");
+        }
+
+        assertTrue(pList.importPrescriptionsFromFile(tempFile.getAbsolutePath()));
+
+        PrescriptionList rxList = jane.getPrescriptionList();
+        rxList.init();
+
+        Prescriptions first = rxList.next();
+        Prescriptions second = rxList.next();
+
+        assertNotNull(first);
+        assertEquals("Lisinopril", first.getMedicineName()); // 2026 comes before 2024
+        assertNotNull(second);
+        assertEquals("Amoxicillin", second.getMedicineName());
+        assertNull(rxList.next());
     }
 
 }

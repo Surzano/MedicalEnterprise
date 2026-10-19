@@ -1,7 +1,10 @@
-import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
+import java.time.LocalDate;
 
 public class PatientList {
 
@@ -37,7 +40,7 @@ public class PatientList {
         return true;
     }
 
-    // Constant-time add method for bulk importing from files before sorting
+
     private boolean addUnsorted(Patient p) {
         if (count >= MAX_PATIENTS) {
             return false;
@@ -54,7 +57,7 @@ public class PatientList {
             PatientList.Iterator iter = this.new Iterator();
             Patient p;
 
-            // Iterate using the existing iterator and write out toCSV() with a newline
+
             while ((p = iter.next()) != null) {
                 writer.write(p.toCSV() + "\n");
             }
@@ -71,14 +74,14 @@ public class PatientList {
         try (Scanner scanner = new Scanner(new File(filename))) {
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
-                Patient p = Patient.makePatient(line); // Delegates parsing to the Patient class
+                Patient p = Patient.makePatient(line);
 
                 if (p != null) {
                     addUnsorted(p);
                 }
             }
 
-            // Sort the entire array using mergesort after all elements are added unsorted
+
             if (count > 1) {
                 mergesort(0, count - 1);
             }
@@ -90,20 +93,20 @@ public class PatientList {
         return success;
     }
 
-    // Recursively splits the list in half
+
     private void mergesort(int left, int right) {
         if (left >= right) {
-            return; // A list of zero or one objects is already sorted
+            return;
         }
 
         int mid = left + (right - left) / 2;
 
         mergesort(left, mid);
         mergesort(mid + 1, right);
-        merge(left, mid, right); // Merge the sorted halves
+        merge(left, mid, right);
     }
 
-    // Traverses each list exactly once to take the smaller of the two front elements
+
     private void merge(int left, int mid, int right) {
         int leftSize = mid - left + 1;
         int rightSize = right - mid;
@@ -185,6 +188,57 @@ public class PatientList {
                 return patients[CurrentIndex++];
             }
             return null;
+        }
+    }
+    public boolean importPrescriptionsFromFile(String filename) {
+        try (Scanner scanner = new Scanner(new File(filename))) {
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine().trim();
+                if (line.isEmpty()) continue;
+
+                String[] tokens = line.split(",");
+                if (tokens.length < 6) continue;
+
+                try {
+                    Name name;
+                    LocalDate dob;
+
+                    // If patient name is split into "Last, First" (7 tokens total)
+                    if (tokens.length == 7) {
+                        String lastName = tokens[0].trim();
+                        String firstName = tokens[1].trim();
+                        name = new Name(lastName, firstName);
+                        dob = LocalDate.parse(tokens[2].trim());
+                    }
+                    // If patient name is in a single column "Last First" or "First Last" (6 tokens total)
+                    else {
+                        String[] nameParts = tokens[0].trim().split("\\s+");
+                        if (nameParts.length >= 2) {
+                            // Adjust order if your 6-column CSV uses First Last vs Last First
+                            name = new Name(nameParts[0], nameParts[1]);
+                        } else {
+                            name = new Name(tokens[0].trim(), "");
+                        }
+                        dob = LocalDate.parse(tokens[1].trim());
+                    }
+
+                    PatientID id = new PatientID(name, dob);
+                    Patient patient = this.find(id);
+
+                    if (patient != null) {
+                        Prescriptions pr = Prescriptions.makePrescription(line);
+                        if (pr != null) {
+                            patient.getPrescriptionList().add(pr);
+                        }
+                    }
+                } catch (Exception e) {
+                    // Skip malformed line without crashing the file import
+                    continue;
+                }
+            }
+            return true;
+        } catch (IOException e) {
+            return false;
         }
     }
 }

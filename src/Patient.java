@@ -2,13 +2,17 @@ import java.time.LocalDate;
 
 public class Patient {
     private PatientID id;
+    private PrescriptionList prescriptions;
 
     public Patient(PatientID id) {
         this.id = id;
+        this.prescriptions = new PrescriptionList();
     }
 
-    public PatientID getPatientID() {
-        return this.id;
+    public PatientID getPatientID() {return this.id;}
+
+    public PrescriptionList getPrescriptionList() {
+        return prescriptions;
     }
 
     public String toCSV() {

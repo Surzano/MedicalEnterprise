@@ -37,5 +37,18 @@ public class PatientTest {
 
         assertNull(Patient.makePatient("Smith, John, 05/12/1985"));
     }
+    @Test
+    public void testPatientPrescriptionListAccess() {
+        PatientID id = new PatientID(new Name("Doe", "Jane"), LocalDate.parse("1990-05-12"));
+        Patient patient = new Patient(id);
+
+        assertNotNull(patient.getPrescriptionList());
+
+        Prescriptions pr = new Prescriptions("Ibuprofen", LocalDate.parse("2026-03-01"), "200mg", "Dr. Smith");
+        patient.getPrescriptionList().add(pr);
+
+        patient.getPrescriptionList().init();
+        assertEquals(pr, patient.getPrescriptionList().next());
+    }
 
 }
