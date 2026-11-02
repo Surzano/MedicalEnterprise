@@ -1,6 +1,6 @@
 import java.time.LocalDate;
 
-public class PatientID implements Comparable<PatientID> {
+public class PatientID implements Comparable<PatientID>, TreeKey {
     private final Name nm;
     private final LocalDate dob;
 
@@ -9,7 +9,6 @@ public class PatientID implements Comparable<PatientID> {
         this.dob = dob;
     }
 
-    // --- ADD THESE TWO GETTERS ---
     public Name getNm() {
         return nm;
     }
@@ -35,6 +34,32 @@ public class PatientID implements Comparable<PatientID> {
         return nm.islessThan(other.nm);
     }
 
+
+    public boolean isLessThan(PatientID other) {
+        return islessthan(other);
+    }
+
+
+
+    @Override
+    public boolean match(TreeKey other) {
+        if (other instanceof PatientID) {
+            return this.match((PatientID) other);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isLessThan(TreeKey other) {
+        if (other instanceof PatientID) {
+            return this.islessthan((PatientID) other);
+        }
+        return false;
+    }
+
+
+
+    @Override
     public int compareTo(PatientID other) {
         if (other == null) {
             return 1;
@@ -48,7 +73,8 @@ public class PatientID implements Comparable<PatientID> {
         return 1;
     }
 
-    public String toString(){
-        return nm.fullName()+ " - DOB: " + dob.toString();
+    @Override
+    public String toString() {
+        return nm.fullName() + " - DOB: " + dob.toString();
     }
 }

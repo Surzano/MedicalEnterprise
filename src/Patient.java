@@ -1,6 +1,6 @@
 import java.time.LocalDate;
 
-public class Patient {
+public class Patient implements TreeObject {
     private PatientID id;
     private PrescriptionList prescriptions;
 
@@ -9,15 +9,27 @@ public class Patient {
         this.prescriptions = new PrescriptionList();
     }
 
-    public PatientID getPatientID() {return this.id;}
+    public PatientID getPatientID() {
+        return this.id;
+    }
+
+    // --- TreeObject Interface Method ---
+    @Override
+    public TreeKey getKey() {
+        return this.id;
+    }
 
     public PrescriptionList getPrescriptionList() {
         return prescriptions;
     }
 
     public String toCSV() {
-
         return this.id.getNm().fullName() + ", " + this.id.getDob().toString();
+    }
+
+    @Override
+    public String toString() {
+        return "Patient: " + this.id.toString();
     }
 
     public static Patient makePatient(String line) {
@@ -26,7 +38,6 @@ public class Patient {
             if (fields.length < 3) {
                 throw new IllegalArgumentException("Patient must have at least 3 columns");
             }
-
 
             String lastName = fields[0].trim();
             String firstName = fields[1].trim();
@@ -38,13 +49,11 @@ public class Patient {
 
             LocalDate dob = LocalDate.parse(dobString);
 
-
-            Name patientNM = new Name(lastName, firstName);
+            Name patientNM = new Name(firstName, lastName);
             PatientID newId = new PatientID(patientNM, dob);
             return new Patient(newId);
 
         } catch (Exception e) {
-            // Return null to skip invalid lines without crashing the read
             return null;
         }
     }
